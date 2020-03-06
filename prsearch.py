@@ -7,7 +7,7 @@ API_BASE = "https://api.github.com"
 MAX_PAGES = 20
 QUERY = """
 {
-  repository(name: "cpython", owner: "python") {
+  repository(name: "%s", owner: "%s") {
     pullRequests(first: 100,%s states: OPEN) {
       nodes {
         files(first: 10) {
@@ -49,7 +49,7 @@ def valid_data(data):
     return True
 
 
-def get_fresh_data(token):
+def get_fresh_data(owner, repo, token):
     after = ""
     results = []
     while len(results) == 0 or valid_data(results[-1]):
@@ -59,7 +59,7 @@ def get_fresh_data(token):
             ]["endCursor"]
             after = ' after: "%s",' % end
 
-        results.append(send_query(QUERY % after, token))
+        results.append(send_query(QUERY % (repo, owner, after), token))
         print(f"Crawling the {len(results)}th page.")
 
     results.pop()
@@ -93,13 +93,15 @@ def get_prs(cache_dir):
 def main():
     parser = ArgumentParser()
     parser.add_argument("files", nargs="*")
+    parser.add_argument("--repo", help="owner/repo")
     parser.add_argument("--fresh", action="store_true")
     parser.add_argument("--token", default=os.getenv("GH_TOKEN"))
     parser.add_argument("--cachedir", default="results.json")
     options = parser.parse_args()
 
     if options.fresh:
-        results = get_fresh_data(options.token)
+        owner, repo = options.repo.split("/")
+        results = get_fresh_data(owner, repo, options.token)
         dump_results(results, options.cachedir)
 
     query_files = set(options.files)
