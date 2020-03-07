@@ -1,5 +1,6 @@
 import json
 import os
+import webbrowser
 from argparse import ArgumentParser
 from urllib.request import Request, urlopen
 
@@ -94,6 +95,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("files", nargs="*")
     parser.add_argument("--repo", help="owner/repo")
+    parser.add_argument("--open", action="store_true")
     parser.add_argument("--fresh", action="store_true")
     parser.add_argument("--token", default=os.getenv("GH_TOKEN"))
     parser.add_argument("--cachedir", default="results.json")
@@ -110,6 +112,8 @@ def main():
             print("Matching:", *match)
             print("URL:", result["url"])
             print("=" * 30)
+            if options.open:
+                webbrowser.open(result["url"])
 
 
 if __name__ == "__main__":
