@@ -99,6 +99,8 @@ def main():
     parser.add_argument("--fresh", action="store_true")
     parser.add_argument("--token", default=os.getenv("GH_TOKEN"))
     parser.add_argument("--cachedir", default="results.json")
+    parser.add_argument("--max-files", type=int)
+    parser.add_argument("--exact", action="store_true")
     options = parser.parse_args()
 
     if options.fresh:
@@ -106,14 +108,27 @@ def main():
         results = get_fresh_data(owner, repo, options.token)
         dump_results(results, options.cachedir)
 
-    query_files = set(options.files)
     for result in get_prs(options.cachedir):
-        if match := query_files.intersection(result["files"]):
-            print("Matching:", *match)
-            print("URL:", result["url"])
-            print("=" * 30)
-            if options.open:
-                webbrowser.open(result["url"])
+        files = result["files"]
+        matches = []
+        for query_file in options.files:
+            for result_file in result["files"]:
+                if options.exact and query_file == result_file:
+                    mathces.append(result_file)
+                if not options.exact and query_file in result_file:
+                    matches.append(result_file)
+        if len(matches) == 0:
+            continue
+        if (
+            options.max_files is not None
+            and len(result["files"]) > options.max_files
+        ):
+            continue
+
+        print("Touched files:", *result["files"])
+        print("URL:", result["url"])
+        if options.open:
+            webbrowser.open(result["url"])
 
 
 if __name__ == "__main__":
